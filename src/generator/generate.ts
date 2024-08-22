@@ -8,9 +8,6 @@ import {createInterface} from 'node:readline';
 enum ParseMode {
     Models = 'models',
     Enum = 'enum',
-    WaitingForPayload = 'waiting-for-payload',
-    InsidePayload = 'inside-payload',
-    MaybePayloadEnd = 'maybe-payload-end',
 }
 
 /**
@@ -43,6 +40,8 @@ export async function generate(jsClientPath: string, outputDir: string) {
     const generatedComment = `// generated at ${Date.now()}\n\n`;
 
     typesStream.write(generatedComment);
+    typesStream.write("import type {Prisma} from '@prisma/client'");
+
     jsStream.write(generatedComment);
 
     let currentParseMode = ParseMode.Models;
@@ -61,48 +60,17 @@ export async function generate(jsClientPath: string, outputDir: string) {
             } else if (line.startsWith('export namespace $Enums {')) {
                 currentParseMode = ParseMode.Enum;
             } else {
-                typesStream.write(
-                    rawLine.replace('Prisma.$', '$').replace('$Result.', 'runtime.Types.Result.') +
-                        '\n',
-                );
+                typesStream.write(rawLine.replace('$Result.', 'runtime.Types.Result.') + '\n');
             }
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         } else if (currentParseMode === ParseMode.Enum) {
             if (line === '}') {
-                currentParseMode = ParseMode.WaitingForPayload;
+                break;
             } else {
                 typesStream.write(rawLine + '\n');
                 if (!line.startsWith('export type')) {
                     jsStream.write(rawLine.replace(': {', ' = {') + '\n');
                 }
-            }
-        } else if (currentParseMode === ParseMode.WaitingForPayload) {
-            if (line.startsWith('export type $')) {
-                typesStream.write(
-                    line
-                        .replace('export ', 'declare ')
-                        .replaceAll('$Extensions.', 'runtime.Types.Extensions.') + '\n',
-                );
-                currentParseMode = ParseMode.InsidePayload;
-            } else if (line.startsWith('* Enums')) {
-                break;
-            }
-        } else {
-            if (currentParseMode === ParseMode.MaybePayloadEnd && line === '') {
-                currentParseMode = ParseMode.WaitingForPayload;
-                continue;
-            }
-
-            currentParseMode = ParseMode.InsidePayload;
-
-            typesStream.write(
-                rawLine
-                    .replaceAll('$Enums.', '')
-                    .replaceAll('Prisma.$', '$')
-                    .replaceAll('$Extensions.', 'runtime.Types.Extensions.') + '\n',
-            );
-
-            if (line === '}') {
-                currentParseMode = ParseMode.MaybePayloadEnd;
             }
         }
     }
