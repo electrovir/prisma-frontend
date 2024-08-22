@@ -1,6 +1,6 @@
 {
     "name": "prisma-frontend",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "description": "A Prisma generator for creating frontend-friendly exports (types and enums).",
     "keywords": [
         "prisma",

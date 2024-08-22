@@ -72,11 +72,20 @@ export async function generate(jsClientPath: string, outputDir: string) {
         } else if (currentParseMode === ParseMode.Enum) {
             if (line === '}') {
                 return true;
+            } else if (line.startsWith('export type')) {
+                return;
             } else {
-                typesStream.write(rawLine + '\n');
-                if (!line.startsWith('export type')) {
-                    jsStream.write(rawLine.replace(': {', ' = {') + '\n');
+                // types enum output
+                if (line.startsWith('export const')) {
+                    typesStream.write(
+                        rawLine.replace(' const ', ' enum ').replace(': {', ' {') + '\n',
+                    );
+                } else {
+                    typesStream.write(rawLine.replace(": '", " = '") + '\n');
                 }
+
+                // js enum output
+                jsStream.write(rawLine.replace(': {', ' = {') + '\n');
             }
         }
     });
