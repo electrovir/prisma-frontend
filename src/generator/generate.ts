@@ -1,62 +1,117 @@
-import {safeMatch} from '@augment-vir/common';
-import {writeFileAndDir} from '@augment-vir/node-js';
-import {readFile} from 'node:fs/promises';
+import {extractErrorMessage} from '@augment-vir/common';
+import {log} from '@augment-vir/node-js';
+import {createReadStream, createWriteStream} from 'node:fs';
+import {mkdir} from 'node:fs/promises';
 import {join} from 'node:path';
+import {createInterface} from 'node:readline';
 import {GeneratorOptions} from './generator-options.js';
 
+enum ParseMode {
+    Models = 'models',
+    Enum = 'enum',
+    WaitingForPayload = 'waiting-for-payload',
+    InsidePayload = 'inside-payload',
+    MaybePayloadEnd = 'maybe-payload-end',
+}
+
 /**
- * Reads inputs from a Prisma generator and then generates and writes all the needed GraphQL and JS
- * code required for a full Node.js GraphQL server to function.
+ * Reads inputs from a the generated JS client and then generates and writes the frontend output.
  *
  * @category Prisma Generator
  */
 export async function generate(jsClientPath: string, options: GeneratorOptions) {
-    await writeTypes(jsClientPath, options);
+    const jsClientFilePath = join(jsClientPath, 'index.d.ts');
+
+    const readLine = createInterface({
+        input: createReadStream(jsClientFilePath),
+        crlfDelay: Infinity,
+    });
+
+    await mkdir(options.outputDir, {recursive: true});
+
+    const typesStream = createWriteStream(join(options.outputDir, 'index.d.ts'));
+    const jsStream = createWriteStream(join(options.outputDir, 'index.js'));
+
+    typesStream.on('error', (error: unknown) => {
+        log.error(`Stream to types file failed: ${extractErrorMessage(error)}`);
+        process.exit(1);
+    });
+    jsStream.on('error', (error: unknown) => {
+        log.error(`Stream to js file failed: ${extractErrorMessage(error)}`);
+        process.exit(1);
+    });
+
+    const generatedComment = `// generated at ${Date.now()}\n\n`;
+
+    typesStream.write(generatedComment);
+    jsStream.write(generatedComment);
+
+    let currentParseMode = ParseMode.Models;
+
+    for await (const rawLine of readLine) {
+        const line = rawLine.trim();
+
+        if (currentParseMode === ParseMode.Models) {
+            if (line.startsWith('import * as runtime')) {
+                typesStream.write(rawLine.replace('import *', 'import type *') + '\n');
+            } else if (
+                removeLineStarts.some((removeLineStart) => line.startsWith(removeLineStart))
+            ) {
+                // skip these lines
+                continue;
+            } else if (line.startsWith('export namespace $Enums {')) {
+                currentParseMode = ParseMode.Enum;
+            } else {
+                typesStream.write(
+                    rawLine.replace('Prisma.$', '$').replace('$Result.', 'runtime.Types.Result.') +
+                        '\n',
+                );
+            }
+        } else if (currentParseMode === ParseMode.Enum) {
+            if (line === '}') {
+                currentParseMode = ParseMode.WaitingForPayload;
+            } else {
+                typesStream.write(rawLine + '\n');
+                if (!line.startsWith('export type')) {
+                    jsStream.write(rawLine.replace(': {', ' = {') + '\n');
+                }
+            }
+        } else if (currentParseMode === ParseMode.WaitingForPayload) {
+            if (line.startsWith('export type $')) {
+                typesStream.write(
+                    line
+                        .replace('export ', 'declare ')
+                        .replace('$Extensions.', 'runtime.Types.Extensions.') + '\n',
+                );
+                currentParseMode = ParseMode.InsidePayload;
+            } else if (line.startsWith('* Enums')) {
+                break;
+            }
+        } else {
+            if (currentParseMode === ParseMode.MaybePayloadEnd && line === '') {
+                currentParseMode = ParseMode.WaitingForPayload;
+                continue;
+            }
+
+            currentParseMode = ParseMode.InsidePayload;
+
+            typesStream.write(rawLine.replace('$Enums.', '') + '\n');
+
+            if (line === '}') {
+                currentParseMode = ParseMode.MaybePayloadEnd;
+            }
+        }
+    }
+
+    typesStream.end();
+    jsStream.end();
 }
 
-async function writeTypes(jsClientPath: string, options: GeneratorOptions) {
-    const indexTypesPath = join(jsClientPath, 'index.d.ts');
-
-    const indexTypesContents = String(await readFile(indexTypesPath));
-
-    const payloadTypes = safeMatch(
-        indexTypesContents,
-        /(export type \$[^<]+Payload(?:.|\n)+?\n\n)/g,
-    );
-
-    const [
-        ,
-        enumTypes = '',
-    ] = safeMatch(indexTypesContents, /export namespace \$Enums {((?:.|\n)+?)}\n\n/);
-
-    const fullContents = [
-        `// generated at ${Date.now()}`,
-        indexTypesContents
-            .replace(/\/\*\*\n \* Enums(?:.|\n)*$/, '')
-            .replace(
-                `import $Types = runtime.Types // general types
-import $Public = runtime.Types.Public
-import $Utils = runtime.Types.Utils
-import $Extensions = runtime.Types.Extensions
-import $Result = runtime.Types.Result
-`,
-                '',
-            )
-            .replace('import * as runtime', 'import type * as runtime'),
-        payloadTypes.join('').replaceAll('export', ''),
-        enumTypes,
-    ]
-        .join('\n\n')
-        .replaceAll('Prisma.$', '$')
-        .replaceAll('export type PrismaPromise<T> = $Public.PrismaPromise<T>', '')
-        .replaceAll(/\n{3,}/g, '\n\n')
-        .replaceAll('$Enums.', '')
-        .replaceAll('$Extensions.', 'runtime.Types.Extensions.')
-        .replaceAll('$Result.', 'runtime.Types.Result.');
-
-    await writeFileAndDir(join(options.outputDir, 'index.d.ts'), fullContents);
-
-    const jsContents = enumTypes.replaceAll(/export type.+\n/g, '').replaceAll(/: {/g, ' = {');
-
-    await writeFileAndDir(join(options.outputDir, 'index.js'), jsContents);
-}
+const removeLineStarts = [
+    'import $Types =',
+    'import $Public =',
+    'import $Utils =',
+    'import $Extensions =',
+    'import $Result =',
+    'export type PrismaPromise<T>',
+];
