@@ -2,12 +2,37 @@ import {extractErrorMessage} from '@augment-vir/common';
 import {log} from '@augment-vir/node-js';
 import {createReadStream, createWriteStream} from 'node:fs';
 import {mkdir} from 'node:fs/promises';
-import {join} from 'node:path';
+import {dirname, join} from 'node:path';
 import {createInterface} from 'node:readline';
 
 enum ParseMode {
     Models = 'models',
     Enum = 'enum',
+}
+
+async function openFileWriteStream(filePath: string) {
+    await mkdir(dirname(filePath), {recursive: true});
+    const writeStream = createWriteStream(filePath);
+
+    writeStream.on('error', (error: unknown) => {
+        log.error(`Stream to types file failed: ${extractErrorMessage(error)}`);
+        process.exit(1);
+    });
+
+    return writeStream;
+}
+
+async function perFileLine(filePath: string, callback: (rawLine: string) => void | true) {
+    const readLine = createInterface({
+        input: createReadStream(filePath),
+        crlfDelay: Infinity,
+    });
+
+    for await (const rawLine of readLine) {
+        if (callback(rawLine)) {
+            break;
+        }
+    }
 }
 
 /**
@@ -16,37 +41,18 @@ enum ParseMode {
  * @category Prisma Generator
  */
 export async function generate(jsClientPath: string, outputDir: string) {
-    const jsClientFilePath = join(jsClientPath, 'index.d.ts');
-
-    const readLine = createInterface({
-        input: createReadStream(jsClientFilePath),
-        crlfDelay: Infinity,
-    });
-
-    await mkdir(outputDir, {recursive: true});
-
-    const typesStream = createWriteStream(join(outputDir, 'index.d.ts'));
-    const jsStream = createWriteStream(join(outputDir, 'index.js'));
-
-    typesStream.on('error', (error: unknown) => {
-        log.error(`Stream to types file failed: ${extractErrorMessage(error)}`);
-        process.exit(1);
-    });
-    jsStream.on('error', (error: unknown) => {
-        log.error(`Stream to js file failed: ${extractErrorMessage(error)}`);
-        process.exit(1);
-    });
+    const typesStream = await openFileWriteStream(join(outputDir, 'index.d.ts'));
+    const jsStream = await openFileWriteStream(join(outputDir, 'index.js'));
 
     const generatedComment = `// generated at ${Date.now()}\n\n`;
 
     typesStream.write(generatedComment);
     typesStream.write("import type {Prisma} from '@prisma/client'");
-
     jsStream.write(generatedComment);
 
     let currentParseMode = ParseMode.Models;
 
-    for await (const rawLine of readLine) {
+    await perFileLine(join(jsClientPath, 'index.d.ts'), (rawLine): void | true => {
         const line = rawLine.trim();
 
         if (currentParseMode === ParseMode.Models) {
@@ -56,7 +62,7 @@ export async function generate(jsClientPath: string, outputDir: string) {
                 removeLineStarts.some((removeLineStart) => line.startsWith(removeLineStart))
             ) {
                 // skip these lines
-                continue;
+                return;
             } else if (line.startsWith('export namespace $Enums {')) {
                 currentParseMode = ParseMode.Enum;
             } else {
@@ -65,7 +71,7 @@ export async function generate(jsClientPath: string, outputDir: string) {
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         } else if (currentParseMode === ParseMode.Enum) {
             if (line === '}') {
-                break;
+                return true;
             } else {
                 typesStream.write(rawLine + '\n');
                 if (!line.startsWith('export type')) {
@@ -73,7 +79,7 @@ export async function generate(jsClientPath: string, outputDir: string) {
                 }
             }
         }
-    }
+    });
 
     typesStream.end();
     jsStream.end();

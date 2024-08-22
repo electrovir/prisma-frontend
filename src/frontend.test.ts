@@ -11,7 +11,9 @@ describe('frontend', () => {
         assert.strictEqual(Status.Active, 'Active');
 
         // @ts-ignore: this import won't have types at initial compile time
+        // eslint-disable-next-line sonarjs/sonar-no-unused-vars, sonarjs/no-dead-store
         const user: User = {
+            // use this object to test auto complete
             createdAt: new Date(),
         };
     });
