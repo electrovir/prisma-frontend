@@ -16,7 +16,7 @@ const baseConfig = generateDepCruiserConfig({
         },
         'not-to-unresolvable': {
             to: [
-                'node_modules/.prisma',
+                '.prisma/frontend',
             ],
         },
     },

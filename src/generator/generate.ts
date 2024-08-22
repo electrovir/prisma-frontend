@@ -4,7 +4,6 @@ import {createReadStream, createWriteStream} from 'node:fs';
 import {mkdir} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createInterface} from 'node:readline';
-import {GeneratorOptions} from './generator-options.js';
 
 enum ParseMode {
     Models = 'models',
@@ -19,7 +18,7 @@ enum ParseMode {
  *
  * @category Prisma Generator
  */
-export async function generate(jsClientPath: string, options: GeneratorOptions) {
+export async function generate(jsClientPath: string, outputDir: string) {
     const jsClientFilePath = join(jsClientPath, 'index.d.ts');
 
     const readLine = createInterface({
@@ -27,10 +26,10 @@ export async function generate(jsClientPath: string, options: GeneratorOptions) 
         crlfDelay: Infinity,
     });
 
-    await mkdir(options.outputDir, {recursive: true});
+    await mkdir(outputDir, {recursive: true});
 
-    const typesStream = createWriteStream(join(options.outputDir, 'index.d.ts'));
-    const jsStream = createWriteStream(join(options.outputDir, 'index.js'));
+    const typesStream = createWriteStream(join(outputDir, 'index.d.ts'));
+    const jsStream = createWriteStream(join(outputDir, 'index.js'));
 
     typesStream.on('error', (error: unknown) => {
         log.error(`Stream to types file failed: ${extractErrorMessage(error)}`);
@@ -81,7 +80,7 @@ export async function generate(jsClientPath: string, options: GeneratorOptions) 
                 typesStream.write(
                     line
                         .replace('export ', 'declare ')
-                        .replace('$Extensions.', 'runtime.Types.Extensions.') + '\n',
+                        .replaceAll('$Extensions.', 'runtime.Types.Extensions.') + '\n',
                 );
                 currentParseMode = ParseMode.InsidePayload;
             } else if (line.startsWith('* Enums')) {
@@ -95,7 +94,12 @@ export async function generate(jsClientPath: string, options: GeneratorOptions) 
 
             currentParseMode = ParseMode.InsidePayload;
 
-            typesStream.write(rawLine.replace('$Enums.', '') + '\n');
+            typesStream.write(
+                rawLine
+                    .replaceAll('$Enums.', '')
+                    .replaceAll('Prisma.$', '$')
+                    .replaceAll('$Extensions.', 'runtime.Types.Extensions.') + '\n',
+            );
 
             if (line === '}') {
                 currentParseMode = ParseMode.MaybePayloadEnd;
