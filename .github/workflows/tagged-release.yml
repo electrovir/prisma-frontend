@@ -1,0 +1,24 @@
+name: 'tagged-release'
+
+on:
+    push:
+        tags:
+            - 'v*'
+permissions:
+    contents: write
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    tagged-release:
+        name: 'Tagged Release'
+        runs-on: 'ubuntu-latest'
+
+        steps:
+            - uses: actions/checkout@v4.1.7
+            - name: numeric version
+              uses: softprops/action-gh-release@v2.0.8
+              with:
+                  make_latest: true

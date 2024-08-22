@@ -1,0 +1,84 @@
+generator jsClient {
+    provider = "prisma-client-js"
+}
+
+generator jsFrontend {
+    provider = "tsx src/cli.ts"
+}
+
+datasource db {
+    provider = "postgresql"
+    // we won't actually be connecting to a real database in tests
+    url      = env("DB_URL")
+}
+
+enum Status {
+    Active
+    Inactive
+}
+
+model User {
+    id        String   @id @default(uuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    email    String
+    password String
+
+    firstName   String?
+    lastName    String?
+    role        String?
+    phoneNumber String?
+    status      Status
+
+    settings UserSettings?
+    posts    UserPost[]
+    regions  Region[]
+}
+
+model Region {
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    regionName String @id
+    users      User[]
+}
+
+model UserPost {
+    id        String   @id @default(uuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    title String
+    body  String
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserSettings {
+    id        String   @id @default(uuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    receivesMarketingEmails Boolean @default(false)
+    canViewReports          Boolean @default(false)
+
+    userId String @unique
+
+    stats UserStats?
+    user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserStats {
+    id        String   @id @default(uuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    likes    Int
+    dislikes Int
+    views    Int
+
+    userSettingsId String       @unique
+    settings       UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+}
