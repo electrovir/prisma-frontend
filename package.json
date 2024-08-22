@@ -34,7 +34,7 @@
         "publish": "virmator publish npm run test:all",
         "start": "txs src/index.ts",
         "test": "virmator test node src/generator/generator.test.ts && virmator test web src/frontend.test.ts",
-        "test:all": "npm run compile && concurrently --colors --kill-others-on-fail -c auto --names tests,spelling,format,docs,deps,lint \"npm run test:coverage\" \"npm run test:spelling\" \"npm run test:format\" \"npm run test:deps\" \"npm run test:lint\"",
+        "test:all": "npm run compile && concurrently --colors --kill-others-on-fail -c auto --names tests,spelling,format,deps,lint \"npm run test:coverage\" \"npm run test:spelling\" \"npm run test:format\" \"npm run test:deps\" \"npm run test:lint\"",
         "test:coverage": "npm run test coverage",
         "test:deps": "virmator deps check",
         "test:format": "virmator format check",

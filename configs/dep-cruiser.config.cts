@@ -14,6 +14,11 @@ const baseConfig = generateDepCruiserConfig({
                 'node_modules/.prisma',
             ],
         },
+        'not-to-unresolvable': {
+            to: [
+                'node_modules/.prisma',
+            ],
+        },
     },
     omitRules: [
         // enter rule names here to omit
