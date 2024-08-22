@@ -105,12 +105,7 @@ const removeLineStarts = [
 ];
 
 export async function updateIndexExport(outputDir: string): Promise<void> {
-    await writeFile(
-        join(distDir, 'index.d.ts'),
-        `export type * from '${relative(distDir, join(outputDir, 'index.js'))}';`,
-    );
-    await writeFile(
-        join(distDir, 'index.js'),
-        `export * from '${relative(distDir, join(outputDir, 'index.js'))}';`,
-    );
+    const exportLine = `export * from '${relative(distDir, join(outputDir, 'index.js'))}';`;
+    await writeFile(join(distDir, 'index.d.ts'), exportLine);
+    await writeFile(join(distDir, 'index.js'), exportLine);
 }
