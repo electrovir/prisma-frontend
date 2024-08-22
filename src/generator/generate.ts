@@ -1,9 +1,10 @@
 import {extractErrorMessage} from '@augment-vir/common';
 import {log} from '@augment-vir/node-js';
 import {createReadStream, createWriteStream} from 'node:fs';
-import {mkdir} from 'node:fs/promises';
-import {dirname, join} from 'node:path';
+import {mkdir, writeFile} from 'node:fs/promises';
+import {dirname, join, relative} from 'node:path';
 import {createInterface} from 'node:readline';
+import {distDir} from '../util/file-paths.js';
 
 enum ParseMode {
     Models = 'models',
@@ -102,3 +103,14 @@ const removeLineStarts = [
     'import $Result =',
     'export type PrismaPromise<T>',
 ];
+
+export async function updateIndexExport(outputDir: string): Promise<void> {
+    await writeFile(
+        join(distDir, 'index.d.ts'),
+        `export type * from '${relative(distDir, join(outputDir, 'index.js'))}';`,
+    );
+    await writeFile(
+        join(distDir, 'index.js'),
+        `export * from '${relative(distDir, join(outputDir, 'index.js'))}';`,
+    );
+}

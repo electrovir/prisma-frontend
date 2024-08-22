@@ -4,7 +4,7 @@ import prismaInternals from '@prisma/internals';
 import {basename, join} from 'node:path';
 import {packageDir, packageParentDir} from '../util/file-paths.js';
 import {readThisPackageJson} from '../util/package-file.js';
-import {generate} from './generate.js';
+import {generate, updateIndexExport} from './generate.js';
 import {waitForClientJs} from './wait-for-client-js.js';
 
 const defaultOutput = join(process.cwd(), 'node_modules', 'prisma-frontend');
@@ -44,6 +44,7 @@ export function registerGenerator() {
 
             try {
                 await generate(jsClientPath, outputDir);
+                await updateIndexExport(outputDir);
             } catch (error) {
                 console.error(error);
                 throw error;
