@@ -1,6 +1,6 @@
 {
     "name": "prisma-frontend",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "A Prisma generator for creating frontend-friendly exports (types and enums).",
     "keywords": [
         "prisma",
@@ -97,6 +97,6 @@
         "virmator": "^13.2.10"
     },
     "engines": {
-        "node": ">=22"
+        "node": ">=18"
     }
 }
