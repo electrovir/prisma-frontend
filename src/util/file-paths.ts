@@ -1,7 +1,10 @@
 import {dirname, join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
-// eslint-disable-next-line unicorn/prefer-module
-export const packageDir = dirname(dirname(import.meta.dirname || __dirname));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+export const packageDir = dirname(dirname(__dirname));
 export const packageJsonFile = join(packageDir, 'package.json');
 export const parentNodeModulesDir = dirname(packageDir);
 export const parentPrismaClientDir = join(parentNodeModulesDir, '.prisma', 'client');
