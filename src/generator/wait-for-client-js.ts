@@ -1,4 +1,4 @@
-import {collapseWhiteSpace, waitUntilTruthy} from '@augment-vir/common';
+import {collapseWhiteSpace, isTruthy, waitUntilTruthy} from '@augment-vir/common';
 import {existsSync} from 'node:fs';
 import {readFile} from 'node:fs/promises';
 import {join, resolve} from 'node:path';
@@ -7,8 +7,10 @@ import {parentPrismaClientDir, siblingPrismaClientDir} from '../util/file-paths.
 const directoriesToTry = [
     parentPrismaClientDir,
     siblingPrismaClientDir,
-    resolve(import.meta.resolve('@prisma/client'), '..', '..', '.prisma', 'client'),
-];
+    'resolve' in import.meta
+        ? resolve(import.meta.resolve('@prisma/client'), '..', '..', '.prisma', 'client')
+        : '',
+].filter(isTruthy);
 
 function getPrismaClientDir(dirFromPrismaOutput: string): string {
     const validDirectory = directoriesToTry.concat(dirFromPrismaOutput).find((dir) => {
