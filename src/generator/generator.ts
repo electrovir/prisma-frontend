@@ -7,8 +7,6 @@ import {readThisPackageJson} from '../util/package-file.js';
 import {generate, updateIndexExport} from './generate.js';
 import {waitForClientJs} from './wait-for-client-js.js';
 
-const defaultOutput = join(process.cwd(), 'node_modules', 'prisma-frontend');
-
 /**
  * Registers the generator with Prisma so it can be triggered via a `prisma generate` command.
  *
@@ -18,7 +16,13 @@ export function registerGenerator() {
     generatorHelper.generatorHandler({
         onManifest() {
             return {
-                defaultOutput,
+                /**
+                 * There's no way to convince Prisma to print a different output path other than
+                 * this default, so we just have to leave it as is even though the generator will be
+                 * much more intelligent about where to generate the output.
+                 */
+                defaultOutput: 'node_modules/.prisma/frontend',
+                requiresGenerators: ['prisma-client-js'],
                 prettyName: 'Frontend Generator',
                 version: readThisPackageJson().version,
             };
@@ -32,19 +36,23 @@ export function registerGenerator() {
                 throw new Error(
                     'Cannot use prisma-frontend generator without prisma-client-js generator.',
                 );
+            } else if (!jsGenerator.output) {
+                throw new Error('Cannot find prisma-client-js output path.');
             }
-            log.faint(`Waiting for JS client generation...`);
-            const jsClientPath = await waitForClientJs(schemaPath);
 
-            const outputDir =
-                generator.output?.value === defaultOutput
-                    ? determineOutputDir()
-                    : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                      prismaInternals.parseEnvValue(generator.output!);
+            const jsOutputDir = prismaInternals.parseEnvValue(jsGenerator.output);
+
+            log.faint(`Waiting for JS client generation...`);
+            const jsClientPath = await waitForClientJs(schemaPath, jsOutputDir);
+
+            const frontendOutputDir =
+                generator.isCustomOutput && generator.output
+                    ? prismaInternals.parseEnvValue(generator.output)
+                    : determineOutputDir();
 
             try {
-                await generate(jsClientPath, outputDir);
-                await updateIndexExport(outputDir);
+                await generate(jsClientPath, frontendOutputDir);
+                await updateIndexExport(frontendOutputDir);
             } catch (error) {
                 console.error(error);
                 throw error;
