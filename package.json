@@ -1,6 +1,6 @@
 {
     "name": "prisma-frontend",
-    "version": "0.0.13",
+    "version": "0.1.0",
     "description": "A Prisma generator for creating frontend-friendly exports (types and enums).",
     "keywords": [
         "prisma",
@@ -23,18 +23,18 @@
         "url": "https://github.com/electrovir"
     },
     "type": "module",
-    "main": "src/index.ts",
-    "module": "src/index.ts",
+    "main": "dist/index.cjs",
+    "module": "dist/index.js",
     "types": "src/index.ts",
     "bin": "src/cli.ts",
     "scripts": {
-        "compile": "virmator compile",
+        "compile": "virmator compile && cp src/index.cjs dist/index.cjs",
         "format": "virmator format",
         "lint": "virmator lint fix",
         "publish": "virmator publish npm run test:all",
         "start": "txs src/index.ts",
-        "test": "npm run compile && virmator test node src/generator/generator.test.ts && virmator test web src/frontend.test.ts",
-        "test:all": "concurrently --colors --kill-others-on-fail -c auto --names tests,spelling,format,deps,lint \"npm run test:coverage\" \"npm run test:spelling\" \"npm run test:format\" \"npm run test:deps\" \"npm run test:lint\"",
+        "test": "virmator test node src/generator/generator.test.ts && virmator test web src/frontend.test.ts",
+        "test:all": "npm run compile && concurrently --colors --kill-others-on-fail -c auto --names tests,spelling,format,deps,lint \"npm run test:coverage\" \"npm run test:spelling\" \"npm run test:format\" \"npm run test:deps\" \"npm run test:lint\"",
         "test:coverage": "npm run test coverage",
         "test:deps": "virmator deps check",
         "test:format": "virmator format check",

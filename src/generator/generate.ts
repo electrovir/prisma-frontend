@@ -43,13 +43,15 @@ async function perFileLine(filePath: string, callback: (rawLine: string) => void
  */
 export async function generate(jsClientPath: string, outputDir: string) {
     const typesStream = await openFileWriteStream(join(outputDir, 'index.d.ts'));
-    const jsStream = await openFileWriteStream(join(outputDir, 'index.js'));
+    const mjsStream = await openFileWriteStream(join(outputDir, 'index.js'));
+    const cjsStream = await openFileWriteStream(join(outputDir, 'index.cjs'));
 
     const generatedComment = `// generated at ${Date.now()}\n\n`;
 
     typesStream.write(generatedComment);
     typesStream.write("import type {Prisma} from '@prisma/client'");
-    jsStream.write(generatedComment);
+    mjsStream.write(generatedComment);
+    cjsStream.write(generatedComment);
 
     let currentParseMode = ParseMode.Models;
 
@@ -86,13 +88,17 @@ export async function generate(jsClientPath: string, outputDir: string) {
                 }
 
                 // js enum output
-                jsStream.write(rawLine.replace(': {', ' = {') + '\n');
+                mjsStream.write(rawLine.replace(': {', ' = {') + '\n');
+                cjsStream.write(
+                    rawLine.replace(': {', ' = {').replaceAll('export const ', 'module.exports.') +
+                        '\n',
+                );
             }
         }
     });
 
     typesStream.end();
-    jsStream.end();
+    mjsStream.end();
 }
 
 const removeLineStarts = [
