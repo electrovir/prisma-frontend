@@ -10,7 +10,6 @@
 /cspell.config.cjs
 /graphics/
 /Icon?
-/src/
 /www-static/
 bash-scripts/
 dist-docs/
