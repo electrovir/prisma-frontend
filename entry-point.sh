@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-npx tsx src/cli.ts
+npx tsx "$(dirname "$(readlink -f "$0")")/src/cli.ts"
