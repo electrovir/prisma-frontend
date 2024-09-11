@@ -1,5 +1,5 @@
 import {extractErrorMessage} from '@augment-vir/common';
-import {log} from '@augment-vir/node-js';
+import {log, toPosixPath} from '@augment-vir/node-js';
 import {createReadStream, createWriteStream} from 'node:fs';
 import {mkdir, writeFile} from 'node:fs/promises';
 import {dirname, join, relative} from 'node:path';
@@ -111,7 +111,7 @@ const removeLineStarts = [
 ];
 
 export async function updateIndexExport(outputDir: string): Promise<void> {
-    const exportLine = `export * from '${relative(distDir, join(outputDir, 'index.js'))}';`;
+    const exportLine = `export * from '${toPosixPath(relative(distDir, join(outputDir, 'index.js')))}';`;
     await writeFile(join(distDir, 'index.d.ts'), exportLine);
     await writeFile(join(distDir, 'index.js'), exportLine);
 }
