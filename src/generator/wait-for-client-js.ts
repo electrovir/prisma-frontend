@@ -1,4 +1,5 @@
-import {collapseWhiteSpace, isTruthy, waitUntilTruthy} from '@augment-vir/common';
+import {check, waitUntil} from '@augment-vir/assert';
+import {collapseWhiteSpace} from '@augment-vir/common';
 import {existsSync} from 'node:fs';
 import {readFile} from 'node:fs/promises';
 import {join, resolve} from 'node:path';
@@ -10,7 +11,7 @@ const directoriesToTry = [
     'resolve' in import.meta
         ? resolve(import.meta.resolve('@prisma/client'), '..', '..', '.prisma', 'client')
         : '',
-].filter(isTruthy);
+].filter(check.isTruthy);
 
 function getPrismaClientDir(dirFromPrismaOutput: string): string {
     const validDirectory = directoriesToTry.concat(dirFromPrismaOutput).find((dir) => {
@@ -32,7 +33,7 @@ export async function waitForClientJs(
     const currentSchema = collapseWhiteSpace(String(await readFile(schemaPath)));
     const prismaClientNearOutputDir = resolve(prismaOutputDir, '..', '..', '.prisma', 'client');
 
-    return await waitUntilTruthy(
+    return await waitUntil.isTruthy(
         async () => {
             const path = getPrismaClientDir(prismaClientNearOutputDir);
 
@@ -46,7 +47,6 @@ export async function waitForClientJs(
                 return '';
             }
         },
-        'Your JS Prisma client never generated, timed out, or generated in an unexpected location.',
         {
             interval: {
                 milliseconds: 1000,
@@ -55,5 +55,6 @@ export async function waitForClientJs(
                 milliseconds: 30_000,
             },
         },
+        'Your JS Prisma client never generated, timed out, or generated in an unexpected location.',
     );
 }

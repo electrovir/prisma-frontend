@@ -3,7 +3,7 @@ generator jsClient {
 }
 
 generator jsFrontend {
-    provider = "tsx src/cli.ts"
+    provider = "tsx src/cli.script.ts"
 }
 
 datasource db {

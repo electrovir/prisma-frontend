@@ -1,4 +1,4 @@
-import {log} from '@augment-vir/node-js';
+import {log} from '@augment-vir/common';
 import generatorHelper from '@prisma/generator-helper';
 import prismaInternals from '@prisma/internals';
 import {basename, join} from 'node:path';

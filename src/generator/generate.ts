@@ -1,5 +1,5 @@
-import {extractErrorMessage} from '@augment-vir/common';
-import {log, toPosixPath} from '@augment-vir/node-js';
+import {extractErrorMessage, log} from '@augment-vir/common';
+import {toPosixPath} from '@augment-vir/node';
 import {createReadStream, createWriteStream} from 'node:fs';
 import {mkdir, writeFile} from 'node:fs/promises';
 import {dirname, join, relative} from 'node:path';
