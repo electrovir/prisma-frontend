@@ -1,0 +1,14 @@
+generator jsClient {
+    provider        = "prisma-client-js"
+    previewFeatures = ["prismaSchemaFolder"]
+}
+
+generator jsFrontend {
+    provider = "tsx src/cli.script.ts"
+}
+
+datasource db {
+    provider = "postgresql"
+    // we won't actually be connecting to a real database in tests
+    url      = env("DB_URL")
+}
