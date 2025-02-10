@@ -1,6 +1,6 @@
 import {check, waitUntil} from '@augment-vir/assert';
 import {collapseWhiteSpace} from '@augment-vir/common';
-import {existsSync} from 'node:fs';
+import {existsSync, lstatSync} from 'node:fs';
 import {readFile} from 'node:fs/promises';
 import {join, resolve} from 'node:path';
 import {parentPrismaClientDir, siblingPrismaClientDir} from '../util/file-paths.js';
@@ -30,7 +30,9 @@ export async function waitForClientJs(
     schemaPath: string,
     prismaOutputDir: string,
 ): Promise<string> {
-    const currentSchema = collapseWhiteSpace(String(await readFile(schemaPath)));
+    const useSchemaDir = lstatSync(schemaPath).isDirectory();
+    const currentSchemaPath = useSchemaDir ? join(schemaPath, 'schema.prisma') : schemaPath;
+    const currentSchema = collapseWhiteSpace(String(await readFile(currentSchemaPath)));
     const prismaClientNearOutputDir = resolve(prismaOutputDir, '..', '..', '.prisma', 'client');
 
     return await waitUntil.isTruthy(
@@ -41,7 +43,9 @@ export async function waitForClientJs(
                 String(await readFile(join(path, 'schema.prisma'))),
             );
 
-            if (generatedSchemaContents === currentSchema) {
+            if (useSchemaDir && generatedSchemaContents.includes(currentSchema)) {
+                return path;
+            } else if (generatedSchemaContents === currentSchema) {
                 return path;
             } else {
                 return '';
