@@ -9,14 +9,9 @@ const baseConfig = defineConfig({
                 'src/index.ts',
             ],
         },
-        'no-non-package-json': {
-            to: [
-                'node_modules/.prisma',
-            ],
-        },
         'not-to-unresolvable': {
             to: [
-                '.prisma/frontend',
+                'prisma-frontend',
             ],
         },
     },

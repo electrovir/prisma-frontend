@@ -4,6 +4,7 @@ module.exports = {
     ...baseConfig,
     ignorePaths: [
         ...baseConfig.ignorePaths,
+        'test-files/generated/',
     ],
     words: [
         ...baseConfig.words,

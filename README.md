@@ -22,13 +22,13 @@ Insert this as a generator in your Prisma schema file:
 // the standard client generator
 generator jsClient {
     provider = "prisma-client-js"
+    output   = "../generated"
 }
 
-// this package's generator
+// make sure this is placed after prisma-client-js
 generator jsFrontend {
     provider = "prisma-frontend"
 }
-
 ```
 
 This generator requires the `prisma-client-js` generator to be used as well (as shown above).
@@ -38,7 +38,7 @@ This generator requires the `prisma-client-js` generator to be used as well (as 
 Import model types and enums from `prisma-frontend`:
 
 ```typescript
-import {type User, AuthRole} from 'prisma-frontend';
+import {type User, AuthRole} from './generated/frontend/index.js';
 
 export function authenticateAdmin(user: Partial<User>): boolean {
     return user.authRole === AuthRole.Admin;

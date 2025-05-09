@@ -1,10 +1,8 @@
 import {extractErrorMessage, log} from '@augment-vir/common';
-import {toPosixPath} from '@augment-vir/node';
 import {createReadStream, createWriteStream} from 'node:fs';
-import {mkdir, writeFile} from 'node:fs/promises';
-import {dirname, join, relative} from 'node:path';
+import {mkdir} from 'node:fs/promises';
+import {dirname, join} from 'node:path';
 import {createInterface} from 'node:readline';
-import {distDir} from '../util/file-paths.js';
 
 enum ParseMode {
     Models = 'models',
@@ -43,15 +41,13 @@ async function perFileLine(filePath: string, callback: (rawLine: string) => void
  */
 export async function generate(jsClientPath: string, outputDir: string) {
     const typesStream = await openFileWriteStream(join(outputDir, 'index.d.ts'));
-    const mjsStream = await openFileWriteStream(join(outputDir, 'index.js'));
-    const cjsStream = await openFileWriteStream(join(outputDir, 'index.cjs'));
+    const jsStream = await openFileWriteStream(join(outputDir, 'index.js'));
 
     const generatedComment = `// generated at ${Date.now()}\n\n`;
 
     typesStream.write(generatedComment);
-    typesStream.write("import type {Prisma} from '@prisma/client'");
-    mjsStream.write(generatedComment);
-    cjsStream.write(generatedComment);
+    typesStream.write("import type {Prisma} from '../client/index'");
+    jsStream.write(generatedComment);
 
     let currentParseMode = ParseMode.Models;
 
@@ -88,17 +84,13 @@ export async function generate(jsClientPath: string, outputDir: string) {
                 }
 
                 // js enum output
-                mjsStream.write(rawLine.replace(': {', ' = {') + '\n');
-                cjsStream.write(
-                    rawLine.replace(': {', ' = {').replaceAll('export const ', 'module.exports.') +
-                        '\n',
-                );
+                jsStream.write(rawLine.replace(': {', ' = {') + '\n');
             }
         }
     });
 
     typesStream.end();
-    mjsStream.end();
+    jsStream.end();
 }
 
 const removeLineStarts = [
@@ -109,9 +101,3 @@ const removeLineStarts = [
     'import $Result =',
     'export type PrismaPromise<T>',
 ];
-
-export async function updateIndexExport(outputDir: string): Promise<void> {
-    const exportLine = `export * from '${toPosixPath(relative(distDir, join(outputDir, 'index.js')))}';`;
-    await writeFile(join(distDir, 'index.d.ts'), exportLine);
-    await writeFile(join(distDir, 'index.js'), exportLine);
-}

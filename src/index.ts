@@ -1,3 +1,7 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore: this file won't exist at compile type
-export * from '.prisma/frontend/index.js';
+export * from './cli.script.js';
+export * from './generator/generate.js';
+export * from './generator/generator.js';
+export * from './generator/wait-for-client-js.js';
+export * from './util/file-paths.js';
+export * from './util/file-paths.test-helper.js';
+export * from './util/package-file.js';

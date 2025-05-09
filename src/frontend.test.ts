@@ -4,12 +4,12 @@ import {assert} from '@augment-vir/assert';
 import {describe, it} from '@augment-vir/test';
 
 // @ts-ignore: this import won't have types at initial compile time
-import type {User} from 'prisma-frontend';
+import type {User} from '../test-files/generated/single/index.js';
 
 describe('frontend', () => {
     it('can import and use enums and types', async () => {
         // @ts-ignore: this import won't have types at initial compile time
-        const {Status} = await import('prisma-frontend');
+        const {Status} = await import('../test-files/generated/single/frontend/index.js');
         assert.strictEquals(Status.Active as string, 'Active');
 
         // @ts-ignore: this import won't have types at initial compile time

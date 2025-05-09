@@ -1,10 +1,9 @@
 import {log} from '@augment-vir/common';
 import generatorHelper from '@prisma/generator-helper';
 import prismaInternals from '@prisma/internals';
-import {basename, join} from 'node:path';
-import {packageDir, packageParentDir} from '../util/file-paths.js';
+import {resolve} from 'node:path';
 import {readThisPackageJson} from '../util/package-file.js';
-import {generate, updateIndexExport} from './generate.js';
+import {generate} from './generate.js';
 import {waitForClientJs} from './wait-for-client-js.js';
 
 /**
@@ -21,7 +20,7 @@ export function registerGenerator() {
                  * this default, so we just have to leave it as is even though the generator will be
                  * much more intelligent about where to generate the output.
                  */
-                defaultOutput: 'node_modules/.prisma/frontend',
+                defaultOutput: '-',
                 requiresGenerators: ['prisma-client-js'],
                 prettyName: 'Frontend Generator',
                 version: readThisPackageJson().version,
@@ -48,23 +47,14 @@ export function registerGenerator() {
             const frontendOutputDir =
                 generator.isCustomOutput && generator.output
                     ? prismaInternals.parseEnvValue(generator.output)
-                    : determineOutputDir();
+                    : resolve(jsOutputDir, 'frontend');
 
             try {
                 await generate(jsClientPath, frontendOutputDir);
-                await updateIndexExport(frontendOutputDir);
             } catch (error) {
                 console.error(error);
                 throw error;
             }
         },
     });
-}
-
-function determineOutputDir() {
-    if (basename(packageParentDir) === 'node_modules') {
-        return join(packageParentDir, '.prisma', 'frontend');
-    } else {
-        return join(packageDir, 'node_modules', '.prisma', 'frontend');
-    }
 }

@@ -10,3 +10,5 @@ graphics/
 node_modules/
 all-files-for-code-coverage.test.ts
 tsconfig.tsbuildinfo
+
+test-files/generated
