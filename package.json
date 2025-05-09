@@ -1,6 +1,6 @@
 {
     "name": "prisma-frontend",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "A Prisma generator for creating frontend-friendly exports (types and enums).",
     "keywords": [
         "prisma",
@@ -46,14 +46,13 @@
         "@augment-vir/assert": "^31.17.1",
         "@augment-vir/common": "^31.17.1",
         "@augment-vir/node": "^31.17.1",
-        "@prisma/client": "^6.7.0",
-        "object-shape-tester": "^5.1.5",
         "tsx": "^4.19.4"
     },
     "devDependencies": {
         "@augment-vir/test": "^31.17.1",
         "@eslint/eslintrc": "^3.3.1",
         "@eslint/js": "9.26.0",
+        "@prisma/client": "^6.7.0",
         "@prisma/generator-helper": "^6.7.0",
         "@prisma/internals": "^6.7.0",
         "@stylistic/eslint-plugin": "^4.2.0",
