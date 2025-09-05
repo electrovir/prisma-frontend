@@ -1,3 +1,7 @@
+**DEPRECATED**
+
+This package is now deprecated as Prisma provides functionality to achieve the same thing that this package did: use `moduleFormat = "esm"` in your JS client generator now. (See https://www.prisma.io/docs/orm/prisma-schema/overview/generators#field-reference-1)
+
 # prisma-frontend
 
 A Prisma generator for creating frontend-friendly exports (types and enums).
